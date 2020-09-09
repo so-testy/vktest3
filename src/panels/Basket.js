@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { withRouter, Link } from 'react-router-dom';
 import accounting from 'accounting';
 
@@ -8,31 +8,49 @@ import edit from '../img/edit.svg';
 import './place.css';
 
 
-const Basket = ({ match: { params: { areaId, itemId }}, foodAreas, order }) => {
-  const [ faster, setFaster ] = useState(true);
-  const [ time, setTime ] = useState('');
-  const [ selfService, setSelfService ] = useState(false);
+const Basket = ({ match: { params: { areaId, itemId } }, foodAreas, order }) => {
+  const ordersParams = JSON.parse((localStorage.getItem('ordersParams') || 'null')) || {};
+  const orderParams = ordersParams[itemId];
+
+  const [faster, setFaster] = useState(orderParams ? orderParams.faster: true);
+  const [time, setTime] = useState(orderParams ? orderParams.time: '');
+  const [selfService, setSelfService] = useState(orderParams ? orderParams: false);
+
   const area = foodAreas.filter(area => area.id === areaId)[0];
   const item = area.items.filter(item => item.id === itemId)[0];
 
-  const [ price, products ] = useMemo(() => {
+  const [price, products] = useMemo(() => {
     const foodIds = new Set((item.foods || []).map(item => item.id));
 
     const products = Object.values(order)
       .filter((value) => {
-        const { item: { id }} = value;
+        const { item: { id } } = value;
 
         return foodIds.has(id);
       });
 
     const result = products.reduce((result, value) => {
-        const { count, item } = value;
+      const { count, item } = value;
 
-        return result + parseInt(item.price) * parseInt(count);
-      }, 0);
+      return result + parseInt(item.price) * parseInt(count);
+    }, 0);
 
-    return [ accounting.formatNumber(result, 0, ' '), products ];
-  }, [ order, item ]);
+    return [accounting.formatNumber(result, 0, ' '), products];
+  }, [order, item]);
+
+  useEffect(() => {
+    return () => {  
+      const updatedOrderParams = {
+        ...ordersParams,
+        [itemId]: {
+          faster,
+          time,
+          selfService
+        }
+      }
+      localStorage.setItem('ordersParams', JSON.stringify(updatedOrderParams))
+    }
+  }, [faster, time, selfService, orderParams, itemId, ordersParams]);
 
   return (
     <div className="Place">
@@ -107,8 +125,8 @@ const Basket = ({ match: { params: { areaId, itemId }}, foodAreas, order }) => {
         <h3>Время:</h3>
         <div className="Place__choice-item">
           <span>Как можно быстрее</span>
-          <Checkbox 
-            checked={faster} 
+          <Checkbox
+            checked={faster}
             onToggle={() => {
               if (faster) {
                 setFaster(false);
@@ -143,7 +161,7 @@ const Basket = ({ match: { params: { areaId, itemId }}, foodAreas, order }) => {
         </div>
         <div className="Place__choice-item">
           <h3>На месте</h3>
-          <Checkbox checked={!selfService} onToggle={() => setSelfService(!setSelfService)} />
+          <Checkbox checked={!selfService} onToggle={() => setSelfService(!selfService)} />
         </div>
       </div>
       <footer className="Place__footer">
