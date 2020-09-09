@@ -9,12 +9,12 @@ import './place.css';
 
 
 const Basket = ({ match: { params: { areaId, itemId } }, foodAreas, order }) => {
-  const ordersParams = JSON.parse((localStorage.getItem('ordersParams') || 'null')) || {};
+  const ordersParams = JSON.parse((localStorage.getItem('ordersParams'))) || {};
   const orderParams = ordersParams[itemId];
 
   const [faster, setFaster] = useState(orderParams ? orderParams.faster: true);
   const [time, setTime] = useState(orderParams ? orderParams.time: '');
-  const [selfService, setSelfService] = useState(orderParams ? orderParams: false);
+  const [selfService, setSelfService] = useState(orderParams ? orderParams.selfService: false);
 
   const area = foodAreas.filter(area => area.id === areaId)[0];
   const item = area.items.filter(item => item.id === itemId)[0];
